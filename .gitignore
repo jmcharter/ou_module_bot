@@ -1,6 +1,7 @@
 *.cpython
 *.db
 *.pyc
+.env
 .DS_Store
 .vscode/
 .venv/
