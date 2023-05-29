@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 class OUModule(BaseModel):
     module_code: str
+    module_title: str
     url: str
     credits: int
     ou_study_level: int

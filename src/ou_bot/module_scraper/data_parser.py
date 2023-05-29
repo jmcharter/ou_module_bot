@@ -41,6 +41,9 @@ class ModulePageParser(DataParser):
     def _get_module_code(self, soup: BeautifulSoup) -> str:
         return soup.find("div", class_="product-module-code-identifier").text.strip()
 
+    def _get_module_title(self, soup: BeautifulSoup) -> str:
+        return soup.find("h1", class_="product-award-title-identifier").text.strip()
+
     def _get_module_credits(self, soup: BeautifulSoup) -> str:
         # Credits value is currently two nodes after the header.
         credits_header = soup.find(lambda t: t.name == "h3" and t.text.strip() == "Credits")
@@ -83,6 +86,7 @@ class ModulePageParser(DataParser):
         soup = self._get_soup()
         return OUModule(
             module_code=self._get_module_code(soup),
+            module_title=self._get_module_title(soup),
             url=self.url,
             credits=self._get_module_credits(soup),
             ou_study_level=self._get_module_study_level(soup),

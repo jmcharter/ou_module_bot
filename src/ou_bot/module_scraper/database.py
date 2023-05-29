@@ -19,6 +19,7 @@ class db:
             CREATE TABLE IF NOT EXISTS ou_modules (
                 id INTEGER PRIMARY KEY,
                 module_code TEXT,
+                module_title TEXT,
                 url TEXT,
                 credits INTEGER,
                 ou_study_level INTEGER,
@@ -40,6 +41,7 @@ class db:
         sql = """
             INSERT OR IGNORE INTO ou_modules (
                 module_code,
+                module_title,
                 url,
                 credits,
                 ou_study_level,
@@ -48,7 +50,7 @@ class db:
                 next_start,
                 next_end
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
 
         try:
@@ -58,6 +60,7 @@ class db:
 
         values = (
             module.module_code,
+            module.module_title,
             module.url,
             module.credits,
             module.ou_study_level,
