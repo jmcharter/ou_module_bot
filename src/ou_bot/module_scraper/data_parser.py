@@ -3,7 +3,7 @@ from datetime import datetime
 
 from bs4 import BeautifulSoup
 
-from ou_bot.ou_module import OUModule
+from ou_bot.common.ou_module import OUModule
 
 
 @dataclass

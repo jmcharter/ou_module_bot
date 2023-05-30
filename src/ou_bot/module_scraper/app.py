@@ -6,7 +6,8 @@ from ou_bot.module_scraper.database import db
 import os
 import concurrent.futures
 
-from ou_bot.ou_module import OUModule
+from ou_bot.common.database import db
+from ou_bot.common.ou_module import OUModule
 
 
 def get_module_urls(scraper: Scraper, parser: DataParser) -> list[str]:
