@@ -1,13 +1,11 @@
-from ou_bot.module_scraper.config import DatabaseConfig, ScraperConfig, CourseListScraperConfig, ThreadConfig
-from ou_bot.module_scraper.data_parser import DataParser, CourseListParser, ModulePageParser
-from ou_bot.module_scraper.scraper import Scraper
-from ou_bot.module_scraper.database import db
-
-import os
 import concurrent.futures
+import os
 
 from ou_bot.common.database import db
 from ou_bot.common.ou_module import OUModule
+from ou_bot.module_scraper.config import CourseListScraperConfig, DatabaseConfig, ScraperConfig, ThreadConfig
+from ou_bot.module_scraper.data_parser import CourseListParser, DataParser, ModulePageParser
+from ou_bot.module_scraper.scraper import Scraper
 
 
 def get_module_urls(scraper: Scraper, parser: DataParser) -> list[str]:
