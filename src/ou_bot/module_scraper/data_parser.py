@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 
 from ou_bot.common.ou_module import OUModule
 
@@ -29,6 +29,14 @@ class CourseListParser(DataParser):
         return urls
 
 
+def _has_one_of_id(t: Tag, search_id: str) -> bool:
+    match t.get("id"):
+        case str(found_id) if found_id.startswith(search_id):
+            return True
+        case _:
+            return False
+
+
 class ModulePageParser(DataParser):
     """Parse the module page and return module data
 
@@ -44,17 +52,17 @@ class ModulePageParser(DataParser):
     def _get_module_title(self, soup: BeautifulSoup) -> str:
         return soup.find("h1", class_="product-award-title-identifier").text.strip()
 
-    def _get_module_credits(self, soup: BeautifulSoup) -> str:
+    def _get_module_credits(self, soup: BeautifulSoup) -> int:
         # Credits value is currently two nodes after the header.
         credits_header = soup.find(lambda t: t.name == "h3" and t.text.strip() == "Credits")
         credits_value = credits_header.next_sibling.next_sibling
-        return credits_value.text.strip()
+        return int(credits_value.text.strip())
 
-    def _get_module_study_level(self, soup: BeautifulSoup) -> str:
+    def _get_module_study_level(self, soup: BeautifulSoup) -> int:
         study_level_caption = soup.find(lambda t: t.name == "caption" and t.text.strip() == "Level of Study")
         parent_table = study_level_caption.parent
         study_level = parent_table.find("td").text.strip()
-        return study_level
+        return int(study_level)
 
     def _get_related_qualifications(self, soup: BeautifulSoup) -> list[str]:
         qual_list = soup.find("div", id="qual-list")
@@ -69,15 +77,22 @@ class ModulePageParser(DataParser):
         items = items[1:]  # Remove first as it is just the subtitle
         return [item.text.strip() for item in items]
 
-    def _get_next_start(self, soup: BeautifulSoup) -> datetime:
-        start_date = soup.find(lambda t: t.get("id") and t.get("id").startswith("start-date")).text
-        dt = datetime.strptime(start_date, "%d %b %Y")
+    def _get_next_start(self, soup: BeautifulSoup) -> datetime | None:
+        start_date = soup.find(lambda t: _has_one_of_id(t, "start-date"))
+        if not start_date:
+            return None
+        try:
+            dt = datetime.strptime(start_date.text, "%d %b %Y")
+        except ValueError:
+            return None
         return dt
 
-    def _get_next_end(self, soup: BeautifulSoup) -> datetime:
-        end_date = soup.find(lambda t: t.get("id") and t.get("id").startswith("end-date")).text
+    def _get_next_end(self, soup: BeautifulSoup) -> datetime | None:
+        end_date = soup.find(lambda t: _has_one_of_id(t, "end-date"))
+        if not end_date:
+            return None
         try:
-            dt = datetime.strptime(end_date, "%b %Y")
+            dt = datetime.strptime(end_date.text, "%b %Y")
         except ValueError:
             return None
         return dt
