@@ -3,7 +3,8 @@ import os
 
 from ou_bot.common.database import db
 from ou_bot.common.ou_module import OUModule
-from ou_bot.module_scraper.config import CourseListScraperConfig, DatabaseConfig, ScraperConfig, ThreadConfig
+from ou_bot.common.config import DatabaseConfig
+from ou_bot.module_scraper.config import CourseListScraperConfig, ScraperConfig, ThreadConfig
 from ou_bot.module_scraper.data_parser import CourseListParser, DataParser, ModulePageParser
 from ou_bot.module_scraper.scraper import Scraper
 

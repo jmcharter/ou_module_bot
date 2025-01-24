@@ -1,5 +1,5 @@
 import sqlite3
-from ou_bot.module_scraper.config import DatabaseConfig
+from ou_bot.common.config import DatabaseConfig
 from ou_bot.common.ou_module import OUModule
 
 
@@ -80,4 +80,11 @@ class db:
             WHERE module_code IN ({placeholders})
         """
         self.cursor.execute(sql, tuple(module_codes))
+        return self.cursor.fetchall()
+
+    def get_all_module_codes(self) -> list[tuple]:
+        sql = """
+            SELECT module_code FROM ou_modules;
+        """
+        self.cursor.execute(sql)
         return self.cursor.fetchall()

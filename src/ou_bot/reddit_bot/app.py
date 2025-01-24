@@ -1,31 +1,24 @@
 from datetime import datetime
-import praw
+
+from praw.models import Submission
 
 from ou_bot.common.database import db
 from ou_bot.common.ou_module import OUModule
-from ou_bot.module_scraper.config import DatabaseConfig
+from ou_bot.common.config import DatabaseConfig
 from ou_bot.reddit_bot.config import PRAWConfig
 from ou_bot.reddit_bot.mako import serve_modules_template
+from ou_bot.reddit_bot.praw_handler import get_reddit_instance
+from ou_bot.reddit_bot.post_scanner import scan_submissions
+
+config = PRAWConfig()
 
 
-def run():
-    config = PRAWConfig()
-    reddit = praw.Reddit(
-        client_id=config.client_id,
-        client_secret=config.client_secret,
-        password=config.password,
-        user_agent=config.user_agent,
-        username=config.username,
-    )
-
-    sub = reddit.subreddit("ouhelperbot_testing")
-    # sub.submit("Test 1", selftext=serve_module_table())
-
+def handle_submission(submission: Submission, modules: set[str]):
     database_config = DatabaseConfig()
     database = db(database_config)
     ou_modules = []
     with database as session:
-        for module in session.query_ou_modules(["M269", "TM111", "MU123"]):
+        for module in session.query_ou_modules(list(modules)):
             ou_modules.append(
                 OUModule(
                     module_code=module[1],
@@ -39,4 +32,16 @@ def run():
                     next_end=datetime.fromisoformat(module[9]),
                 )
             )
-    sub.submit(f"Test 5", selftext=serve_modules_template(modules=ou_modules, user=config.username))
+
+    # post_one = submission.reply(".")
+    # post_two = post_one.reply(serve_modules_template(modules=ou_modules, user=config.username))
+    post = submission.reply(serve_modules_template(modules=ou_modules, user=config.username))
+    # post_one.delete()
+    print(f"Responded to {submission.title}")
+
+
+def run():
+    reddit = get_reddit_instance()
+    sub = reddit.subreddit("ouhelperbot_testing")
+    print("Scanning submissions....")
+    scan_submissions("ouhelperbot_testing", reddit, handle_submission)
