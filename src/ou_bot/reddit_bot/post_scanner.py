@@ -1,7 +1,7 @@
 from typing import Callable, Optional
 
 from cachetools.func import ttl_cache
-from praw import Reddit
+from praw import models, Reddit
 
 from ou_bot.common.config import DatabaseConfig
 from ou_bot.common.database import db
@@ -22,12 +22,12 @@ def match_found(target: str, module: str) -> bool:
     return module.upper() in target.upper()
 
 
-def get_matching_modules_from_string(target: str) -> Optional[set[str]]:
+def get_matching_modules_from_string(target: str) -> set[str]:
     modules = get_tma_modules()
     return set(module for module in modules if match_found(target, module))
 
 
-def scan_submissions(sub_name: str, reddit: Reddit, submission_handler: Callable[[str], None]):
+def scan_submissions(sub_name: str, reddit: Reddit, submission_handler: Callable[[models.Submission, set[str]], None]):
     subreddit = reddit.subreddit(sub_name)
     for submission in subreddit.stream.submissions():
         title_matches = get_matching_modules_from_string(submission.title)

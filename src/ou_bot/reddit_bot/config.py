@@ -18,3 +18,11 @@ class MakoConfig(BaseSettings):
     output_encoding: str = Field(
         "utf-8", env="MAKO_OUTPUT_ENCODING", description="Encoding type for Mako output, e.g. utf-8"
     )
+
+
+class AppConfig(BaseSettings):
+    praw: PRAWConfig = Field(default_factory=lambda: PRAWConfig())
+    mako: MakoConfig = Field(default_factory=lambda: MakoConfig())
+    subreddit: str = Field(
+        ..., env="SUBREDDIT", description="The subreddit the application will scan the posts of and respond to"
+    )

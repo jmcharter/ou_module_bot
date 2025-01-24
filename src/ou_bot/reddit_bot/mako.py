@@ -12,7 +12,7 @@ def serve_template(template_name: str, **kwargs):
     return template.render(**kwargs)
 
 
-def serve_modules_template(modules, user):
+def serve_modules_template(modules: list[str], user: str):
     return serve_template(
         template_name="module_general_table.mako",
         modules=modules,
