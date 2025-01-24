@@ -1,10 +1,10 @@
 [tool.poetry]
 name = "ou-bot"
-version = "0.1.0"
+version = "0.2.0"
 description = ""
 authors = ["Jon Charter"]
 readme = "README.md"
-packages = [{include = "ou_bot", from = "src"}]
+packages = [{ include = "ou_bot", from = "src" }]
 
 [tool.poetry.dependencies]
 python = "^3.9"
@@ -15,6 +15,7 @@ requests = "^2.31.0"
 praw = "^7.7.0"
 mako = "^1.2.4"
 cachetools = "^5.3.1"
+structlog = "^25.1.0"
 
 
 [tool.poetry.group.dev.dependencies]
