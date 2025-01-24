@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 import sqlite3
 from ou_bot.common.config import DatabaseConfig
 from ou_bot.common.ou_module import OUModule
@@ -18,6 +19,7 @@ class db:
             """
             CREATE TABLE IF NOT EXISTS ou_modules (
                 id INTEGER PRIMARY KEY,
+                last_updated_utc TEXT,
                 module_code TEXT,
                 module_title TEXT,
                 url TEXT,
@@ -37,9 +39,10 @@ class db:
     def __exit__(self, exc_type, exc_value, traceback):
         self.conn.close()
 
-    def add_ou_module(self, module: OUModule):
+    def upsert_ou_module(self, module: OUModule):
         sql = """
-            INSERT OR IGNORE INTO ou_modules (
+            INSERT OR REPLACE INTO ou_modules (
+                last_updated_utc,
                 module_code,
                 module_title,
                 url,
@@ -50,15 +53,21 @@ class db:
                 next_start,
                 next_end
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
 
         try:
-            next_end = module.next_end.isoformat()
+            next_start = module.next_start.isoformat() if module.next_start else None
+        except AttributeError:
+            next_start = None
+
+        try:
+            next_end = module.next_end.isoformat() if module.next_end else None
         except AttributeError:
             next_end = None
 
         values = (
+            datetime.now(tz=timezone.utc),
             module.module_code,
             module.module_title,
             module.url,
@@ -66,7 +75,7 @@ class db:
             module.ou_study_level,
             ", ".join(module.related_qualifications),
             ", ".join(module.course_work_includes),
-            module.next_start.isoformat(),
+            next_start,
             next_end,
         )
         self.cursor.execute(sql, values)

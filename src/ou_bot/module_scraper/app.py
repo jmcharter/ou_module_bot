@@ -38,7 +38,7 @@ def scrape_module_pages(urls: list[str], config: ThreadConfig):
 def write_data_to_db(session: db, data: list[OUModule]) -> None:
     with session as database:
         for module in data:
-            database.add_ou_module(module)
+            database.upsert_ou_module(module)
 
 
 def run():

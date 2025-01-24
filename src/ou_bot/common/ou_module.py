@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Optional
 from pydantic import BaseModel
 
 
@@ -11,5 +10,5 @@ class OUModule(BaseModel):
     ou_study_level: int
     related_qualifications: list[str]
     course_work_includes: list[str]
-    next_start: datetime
-    next_end: Optional[datetime]
+    next_start: datetime | None
+    next_end: datetime | None
