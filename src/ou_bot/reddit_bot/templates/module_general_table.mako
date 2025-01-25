@@ -10,7 +10,7 @@ I see you've mentioned some OU modules. I've pulled together some information on
 
 |Credits|Study Level|Next start|Next end|
 |:-|:-|:-|:-|
-|${module.credits}|${module.ou_study_level}|${module.next_start.strftime('%Y-%m-%d')}|${module.next_end.strftime('%Y-%m-%d')}|
+|${module.credits}|${module.ou_study_level}|${module.next_start.strftime('%Y-%m-%d') if module.next_start else 'Not available'}|${module.next_end.strftime('%Y-%m-%d') if module.next_end else 'Not available'}|
 
 % if module.related_qualifications and len(module.related_qualifications[0].strip()) > 0:
 <%text>#####</%text> Related Qualifications
@@ -33,5 +33,5 @@ I see you've mentioned some OU modules. I've pulled together some information on
 
 ^(This content was generated using information taken from the OU.)
 
-^(I'm open source, view my) [^source ^code.](http://github.com/jmcharter/ou_module_bot) ^(To report issues,) [^send ^me
-^a ^message.](https://old.reddit.com/message/compose?to=${user}&subject=Issue%20Report&message=)
+^(I'm open source, view my) [^source ^code. ](http://github.com/jmcharter/ou_module_bot) ^(To report issues,) [^send ^me
+^a ^message. ](https://old.reddit.com/message/compose?to=${user}&subject=Issue%20Report&message=)

@@ -14,8 +14,8 @@ def get_tma_modules() -> list[str]:
     database_config = DatabaseConfig()
     database = db(database_config)
     with database as session:
-        modules_codes = session.get_all_module_codes()
-        return [module_code[0] for module_code in modules_codes]
+        module_codes = session.get_all_module_codes()
+        return module_codes
 
 
 def match_found(target: str, module: str) -> bool:
@@ -29,7 +29,7 @@ def get_matching_modules_from_string(target: str) -> set[str]:
 
 def scan_submissions(sub_name: str, reddit: Reddit, submission_handler: Callable[[models.Submission, set[str]], None]):
     subreddit = reddit.subreddit(sub_name)
-    for submission in subreddit.stream.submissions():
+    for submission in subreddit.stream.submissions(skip_existing=True):
         title_matches = get_matching_modules_from_string(submission.title)
         body_matches = get_matching_modules_from_string(submission.selftext)
         matches = title_matches | body_matches
