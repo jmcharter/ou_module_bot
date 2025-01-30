@@ -17,13 +17,14 @@ logger = structlog.stdlib.get_logger(__name__)
 
 
 def handle_submission(submission: Submission, modules: set[str]):
+    bound_logger = logger.bind(submission=submission)
     database_config = DatabaseConfig()
     database = db(database_config)
     with database as session:
         ou_modules = session.query_ou_modules(list(modules))
     response_body = serve_modules_template(modules=ou_modules, user=config.praw.username)
     if not response_body:
-        logger.error(
+        bound_logger.error(
             "Rendering of template has failed",
             modules=ou_modules,
             user=config.praw.username,
@@ -31,14 +32,13 @@ def handle_submission(submission: Submission, modules: set[str]):
         return
     response = submission.reply(response_body)
     if not response:
-        logger.error("Post two of two has failed")
+        bound_logger.error("Post two of two has failed")
         return
 
-    post_two: Comment = response
-    logger.info(f"Responded to {submission.title}", post=post_two)
+    bound_logger.info(f"Responded to {submission.title}", post=response)
 
 
 def run():
     reddit = get_reddit_instance()
-    print("Scanning submissions....")
+    logger.info("Scanning submissions....")
     scan_submissions(config.subreddit, reddit, handle_submission)
