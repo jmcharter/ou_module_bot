@@ -16,16 +16,11 @@ config = AppConfig()
 logger = structlog.stdlib.get_logger(__name__)
 
 
-def handle_submission(submission: Submission, modules: set[str]):
+def handle_comment(submission: Submission, modules: set[str]):
     database_config = DatabaseConfig()
     database = db(database_config)
     with database as session:
         ou_modules = session.query_ou_modules(list(modules))
-    # response = submission.reply(".")
-    # if not response:
-    # logger.error("Post one of two has failed")
-    # return
-    # post_one: Comment | Message = response
     response_body = serve_modules_template(modules=ou_modules, user=config.praw.username)
     if not response_body:
         logger.error(
@@ -34,20 +29,16 @@ def handle_submission(submission: Submission, modules: set[str]):
             user=config.praw.username,
         )
         return
-    # response = post_one.reply(response_body)
     response = submission.reply(response_body)
     if not response:
         logger.error("Post two of two has failed")
         return
 
     post_two: Comment = response
-    # post_two.mod.distinguish()
-    # post_one.delete()
-
     logger.info(f"Responded to {submission.title}", post=post_two)
 
 
 def run():
     reddit = get_reddit_instance()
-    print("Scanning submissions....")
-    scan_submissions(config.subreddit, reddit, handle_submission)
+    logger.info("Scanning comments....")
+    scan_comments(config.subreddit, reddit, handle_submission)

@@ -1,7 +1,9 @@
+import re
 from typing import Callable, Optional
 
 from cachetools.func import ttl_cache
 from praw import models, Reddit
+from praw.models.reddit.subreddit import SubredditStream
 
 from ou_bot.common.config import DatabaseConfig
 from ou_bot.common.database import db
@@ -35,3 +37,19 @@ def scan_submissions(sub_name: str, reddit: Reddit, submission_handler: Callable
         matches = title_matches | body_matches
         if matches:
             submission_handler(submission, matches)
+
+
+def get_called_modules(comment: str, modules: list[str]) -> set[str]:
+    pattern = r"\[\[(" + "|".join(re.escape(module) for module in modules) + r")\]\]"
+    matches = re.findall(pattern, comment)
+    return set(matches)
+
+
+def scan_comments(sub_name: str, reddit: Reddit, comment_handler: Callable[[models.Comment, set[str]], None]):
+    subreddit = reddit.subreddit(sub_name)
+    comment_stream: SubredditStream = subreddit.stream
+    for comment in comment_stream.comments(skip_existing=True):
+        modules = get_tma_modules()
+        called_modules = get_called_modules(comment.body, modules)
+        if called_modules:
+            comment_handler(comment, called_modules)
