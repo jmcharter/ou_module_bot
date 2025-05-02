@@ -27,3 +27,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.black]
 line-length = 120
+
+[tool.poetry.scripts]
+submission_bot = 'ou_bot.reddit_bot.submission_bot:run'
+comment_bot = 'ou_bot.reddit_bot.comment_bot:run'
