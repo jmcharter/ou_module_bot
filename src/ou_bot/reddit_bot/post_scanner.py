@@ -49,7 +49,7 @@ def get_called_modules(comment: str, modules: list[str]) -> ModuleCodeSet:
     comment = comment.upper().replace("\\", "")  # New reddit will add backslashes to '[[]]', old reddit does not.
     pattern = r"\[\[\s*(" + "|".join(re.escape(module) for module in modules) + r")\s*\]\]"
     matches = re.findall(pattern, comment)
-    logger.debug("get_called_modules", pattern=pattern, comment=comment, matches=matches)
+    # logger.debug("get_called_modules", pattern=pattern, comment=comment, matches=matches)
     return set(matches)
 
 
@@ -64,7 +64,6 @@ def scan_comments(sub_name: str, reddit: Reddit, comment_handler: Callable[[mode
             subreddit=subreddit.display_name,
             comment=comment.body,
             modules=modules,
-            called_modules=called_modules,
         )
         if called_modules:
             comment_handler(comment, called_modules)

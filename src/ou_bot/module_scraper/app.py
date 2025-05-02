@@ -1,6 +1,8 @@
 import concurrent.futures
 import os
 
+import structlog
+
 from ou_bot.common.database import db
 from ou_bot.common.ou_module import OUModule
 from ou_bot.common.config import DatabaseConfig
@@ -8,6 +10,7 @@ from ou_bot.module_scraper.config import CourseListScraperConfig, ScraperConfig,
 from ou_bot.module_scraper.data_parser import CourseListParser, DataParser, ModulePageParser
 from ou_bot.module_scraper.scraper import Scraper
 
+logger = structlog.stdlib.get_logger(__name__)
 
 def get_module_urls(scraper: Scraper, parser: DataParser) -> list[str]:
     data = scraper.scrape_text()
@@ -42,6 +45,7 @@ def write_data_to_db(session: db, data: list[OUModule]) -> None:
 
 
 def run():
+    logger.info("Attempting to scrape OU Modules")
     scraper_config = CourseListScraperConfig()
     thread_config = ThreadConfig()
     database_config = DatabaseConfig()
@@ -52,4 +56,6 @@ def run():
 
     urls = get_module_urls(scraper, course_list_parser)
     module_data = scrape_module_pages(urls, thread_config)
+    if module_data:
+        logger.info("Module data scraped.", scraped_module_qty=len(module_data))
     write_data_to_db(database, module_data)

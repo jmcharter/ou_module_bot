@@ -3,7 +3,6 @@ name = "ou-bot"
 version = "0.2.0"
 description = ""
 authors = ["Jon Charter"]
-readme = "README.md"
 packages = [{ include = "ou_bot", from = "src" }]
 
 [tool.poetry.dependencies]

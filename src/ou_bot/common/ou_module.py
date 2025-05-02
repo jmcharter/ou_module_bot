@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 
 class OUModule(BaseModel):
-    last_updated: datetime
+    last_updated: datetime | None = None
     module_code: str
     module_title: str
     url: str

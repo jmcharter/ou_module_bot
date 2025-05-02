@@ -42,3 +42,5 @@ def run():
     reddit = get_reddit_instance()
     logger.info("Scanning submissions....")
     scan_submissions(config.subreddit, reddit, handle_submission)
+
+run()

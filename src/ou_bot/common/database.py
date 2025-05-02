@@ -5,27 +5,18 @@ from ou_bot.common.ou_module import OUModule, ou_module_factory
 
 
 class db:
-    conn: sqlite3.Connection | None
-    cursor: sqlite3.Cursor | None
     config: DatabaseConfig
 
     def __init__(self, config: DatabaseConfig):
-        self.conn = None
-        self.cursor = None
         self.config = config
-
-    def __enter__(self):
-        self.conn = sqlite3.connect(self.config.database_name + ".db")
+        self.conn = sqlite3.connect("data/" + self.config.database_name + ".db")
         self.cursor = self.conn.cursor()
 
         # Create the OUModule table if it doesn't exist
         self.cursor.execute(
             """
-
             CREATE TABLE IF NOT EXISTS ou_modules (
-                id INTEGER PRIMARY KEY,
-                last_updated_utc TEXT,
-                module_code TEXT,
+                module_code TEXT PRIMARY KEY,
                 module_title TEXT,
                 url TEXT,
                 credits INTEGER,
@@ -33,21 +24,29 @@ class db:
                 related_qualifications TEXT,
                 course_work_includes TEXT,
                 next_start TEXT,
-                next_end TEXT
+                next_end TEXT,
+                last_updated_utc TEXT
             )
         """
         )
         self.conn.commit()
 
+    def __enter__(self):
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
-        self.conn.close()
+    def __exit__(self, _exc_type, _exc_value, _traceback):
+        if self.conn:
+            self.conn.close()
+
+    def close(self):
+        if hasattr(self, "conn") and self.conn:
+            self.conn.commit()
+            self.cursor.close()
+            self.conn.close()
 
     def upsert_ou_module(self, module: OUModule):
         sql = """
             INSERT OR REPLACE INTO ou_modules (
-                last_updated_utc,
                 module_code,
                 module_title,
                 url,
@@ -56,7 +55,8 @@ class db:
                 related_qualifications,
                 course_work_includes,
                 next_start,
-                next_end
+                next_end,
+                last_updated_utc
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
@@ -72,7 +72,6 @@ class db:
             next_end = None
 
         values = (
-            datetime.now(tz=timezone.utc),
             module.module_code,
             module.module_title,
             module.url,
@@ -82,6 +81,7 @@ class db:
             ", ".join(module.course_work_includes),
             next_start,
             next_end,
+            datetime.now(tz=timezone.utc),
         )
         self.cursor.execute(sql, values)
         self.conn.commit()
