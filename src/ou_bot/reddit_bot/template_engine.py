@@ -15,14 +15,27 @@ def serve_template(template_name: str, **kwargs):
     return template.render(**kwargs)
 
 
-def serve_modules_template(modules: list[OUModule], user: str) -> str:
+def serve_modules_template(modules: list[OUModule], user: str) -> str | None:
     try:
-        return serve_template(
-            # template_name="module_general_table.mako",
+        rendered = serve_template(
             template_name="modules_short_summary.mako",
             modules=modules,
             user=user,
         )
+        return rendered
+    except Exception as e:
+        logger.error("Template rendering failed", error=str(e), exc_info=True)
+        return None
+
+
+def serve_comment_template(modules: list[OUModule], user: str) -> str | None:
+    try:
+        rendered = serve_template(
+            template_name="modules_from_comment.mako",
+            modules=modules,
+            user=user,
+        )
+        return rendered
     except Exception as e:
         logger.error("Template rendering failed", error=str(e), exc_info=True)
         return None

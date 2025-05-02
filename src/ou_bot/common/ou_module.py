@@ -16,7 +16,7 @@ class OUModule(BaseModel):
     next_end: datetime | None
 
 
-def ou_module_factory(cursor: Cursor, row):
+def ou_module_factory(cursor: Cursor, row) -> OUModule:
     fields = [column[0] for column in cursor.description]
     data = dict(zip(fields, row))
 

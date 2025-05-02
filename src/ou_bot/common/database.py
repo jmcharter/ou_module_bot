@@ -5,6 +5,10 @@ from ou_bot.common.ou_module import OUModule, ou_module_factory
 
 
 class db:
+    conn: sqlite3.Connection | None
+    cursor: sqlite3.Cursor | None
+    config: DatabaseConfig
+
     def __init__(self, config: DatabaseConfig):
         self.conn = None
         self.cursor = None
