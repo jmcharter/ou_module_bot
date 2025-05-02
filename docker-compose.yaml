@@ -1,0 +1,52 @@
+services:
+  bots:
+    build:
+      context: .
+      dockerfile: infrastructure/Dockerfile
+    restart: always
+    command: bots
+    environment:
+      - CLIENT_ID
+      - CLIENT_SECRET
+      - REDDIT_USER_AGENT
+      - REDDIT_USERNAME
+      - REDDIT_PASSWORD
+      - MAKO_TEMPLATE_DIR
+      - MAKO_MODULE_DIR
+      - OU_MODULE_URL
+      - MAX_CONCURRENT_WORKERS
+      - DATABASE_NAME
+      - SUBREDDIT
+    volumes:
+      - ./data:/app/data
+
+  scraper:
+    build:
+      context: .
+      dockerfile: infrastructure/Dockerfile
+    container_name: module_scraper
+    command: scraper-loop
+    environment:
+      - CLIENT_ID
+      - CLIENT_SECRET
+      - REDDIT_USER_AGENT
+      - REDDIT_USERNAME
+      - REDDIT_PASSWORD
+      - MAKO_TEMPLATE_DIR
+      - MAKO_MODULE_DIR
+      - OU_MODULE_URL
+      - MAX_CONCURRENT_WORKERS
+      - DATABASE_NAME
+      - SUBREDDIT
+    restart: no
+    volumes:
+      - ./data:/app/data
+
+  scheduler:
+    image: mcuadros/ofelia:latest
+    depends_on:
+      - scraper
+    command: daemon --config=/etc/ofelia/config.ini
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./infrastructure/ofelia.ini:/etc/ofelia/config.ini
