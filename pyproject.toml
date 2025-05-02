@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ou-bot"
-version = "0.2.0"
+version = "1.0.0"
 description = ""
 authors = ["Jon Charter"]
 packages = [{ include = "ou_bot", from = "src" }]
