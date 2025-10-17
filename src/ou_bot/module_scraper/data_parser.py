@@ -23,9 +23,24 @@ class DataParser:
 class CourseListParser(DataParser):
     def parse(self) -> list[str]:
         soup = self._get_soup()
-        course_list = soup.find(class_="course-list")
-        a_tags = course_list.find_all("a")
-        urls = [tag.get("href") for tag in a_tags]
+        course_list = soup.find(class_="productList")
+
+        if course_list is None:
+            raise ValueError(
+                "Could not find element with class 'productList' on the page. "
+                "The OU website structure may have changed."
+            )
+
+        # Find all ou-link elements with href attributes
+        ou_links = course_list.find_all("ou-link")
+        urls = [tag.get("href") for tag in ou_links if tag.get("href")]
+
+        if not urls:
+            raise ValueError(
+                "No module URLs found in the productList. "
+                "The OU website structure may have changed."
+            )
+
         return urls
 
 
