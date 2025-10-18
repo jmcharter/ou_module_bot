@@ -46,15 +46,21 @@ def write_data_to_db(session: db, data: list[OUModule]) -> None:
 
 def run():
     logger.info("Attempting to scrape OU Modules")
+    logger.info("Creating configs...")
     scraper_config = CourseListScraperConfig()
     thread_config = ThreadConfig()
     database_config = DatabaseConfig()
 
+    logger.info("Creating scraper and parser...")
     scraper = Scraper(config=scraper_config)
     course_list_parser = CourseListParser()
     database = db(config=database_config)
 
+    logger.info("Getting module URLs...")
     urls = get_module_urls(scraper, course_list_parser)
+    logger.info("URLs retrieved", url_count=len(urls))
+
+    logger.info("Scraping module pages...")
     module_data = scrape_module_pages(urls, thread_config)
     if module_data:
         logger.info("Module data scraped.", scraped_module_qty=len(module_data))

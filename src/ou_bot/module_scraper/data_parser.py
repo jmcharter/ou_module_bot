@@ -1,3 +1,4 @@
+import re
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -23,17 +24,18 @@ class DataParser:
 class CourseListParser(DataParser):
     def parse(self) -> list[str]:
         soup = self._get_soup()
-        course_list = soup.find(class_="productList")
+        course_lists = soup.find_all(class_="productList")
 
-        if course_list is None:
+        if not course_lists:
             raise ValueError(
                 "Could not find element with class 'productList' on the page. "
                 "The OU website structure may have changed."
             )
 
-        # Find all ou-link elements with href attributes
-        ou_links = course_list.find_all("ou-link")
-        urls = [tag.get("href") for tag in ou_links if tag.get("href")]
+        urls = []
+        for course_list in course_lists:
+            ou_links = course_list.find_all("ou-link")
+            urls.extend([tag.get("href") for tag in ou_links if tag.get("href")])
 
         if not urls:
             raise ValueError(
@@ -52,65 +54,70 @@ def _has_one_of_id(t: Tag, search_id: str) -> bool:
             return False
 
 
+@dataclass
 class ModulePageParser(DataParser):
-    """Parse the module page and return module data
-
-    The current module page (2023-05-27) does not give class names or ids to many of the
-    values, so they need to be found by navigating from related headers.
-    """
-
-    url: str
+    url: str = ""
 
     def _get_module_code(self, soup: BeautifulSoup) -> str:
-        return soup.find("div", class_="product-module-code-identifier").text.strip()
+        canonical = soup.find("link", rel="canonical")
+        if canonical and canonical.get("href"):
+            return canonical.get("href").split("/")[-1].upper()
+        return ""
 
     def _get_module_title(self, soup: BeautifulSoup) -> str:
-        return soup.find("h1", class_="product-award-title-identifier").text.strip()
+        title_heading = soup.find("ou-heading", level="h1")
+        if title_heading and title_heading.get("text"):
+            return title_heading.get("text")
+        return ""
 
     def _get_module_credits(self, soup: BeautifulSoup) -> int:
-        # Credits value is currently two nodes after the header.
-        credits_header = soup.find(lambda t: t.name == "h3" and t.text.strip() == "Credits")
-        credits_value = credits_header.next_sibling.next_sibling
-        return int(credits_value.text.strip())
+        credits_elem = soup.find("div", class_="injected-shadow-data", attrs={"data-title": "Credits"})
+        if credits_elem:
+            value = credits_elem.get("data-value", "")
+            if value.isdigit():
+                return int(value)
+        return 0
 
     def _get_module_study_level(self, soup: BeautifulSoup) -> int:
-        study_level_caption = soup.find(lambda t: t.name == "caption" and t.text.strip() == "Level of Study")
-        parent_table = study_level_caption.parent
-        study_level = parent_table.find("td").text.strip()
-        return int(study_level)
+        title_heading = soup.find("ou-heading", level="h1")
+        if title_heading and title_heading.get("text"):
+            title = title_heading.get("text")
+            if "Access" in title:
+                return 0
 
-    def _get_related_qualifications(self, soup: BeautifulSoup) -> list[str]:
-        qual_list = soup.find("div", id="qual-list")
-        if not qual_list:
-            return []
-        return [tag.text.strip() for tag in qual_list if tag.text.strip()]
+        level_elem = soup.find("div", class_="injected-shadow-data", attrs={"data-title": "Level"})
+        if level_elem:
+            value = level_elem.get("data-value", "")
+            match = re.search(r"OU level:\s*(\d+)", value)
+            if match:
+                return int(match.group(1))
 
-    def _get_course_work_includes(self, soup: BeautifulSoup) -> list[str]:
-        items = soup.find("h3", string="Course work includes:").parent.parent.find_all("dd")
-        if not items:
-            return []
-        items = items[1:]  # Remove first as it is just the subtitle
-        return [item.text.strip() for item in items]
+        for text in soup.find_all(string=lambda t: t and "OU level" in str(t)):
+            match = re.search(r"OU level (\d+)", str(text))
+            if match:
+                return int(match.group(1))
+        return 0
 
     def _get_next_start(self, soup: BeautifulSoup) -> datetime | None:
-        start_date = soup.find(lambda t: _has_one_of_id(t, "start-date"))
-        if not start_date:
+        table = soup.find("table")
+        if not table:
             return None
-        try:
-            dt = datetime.strptime(start_date.text, "%d %b %Y")
-        except ValueError:
-            return None
-        return dt
 
-    def _get_next_end(self, soup: BeautifulSoup) -> datetime | None:
-        end_date = soup.find(lambda t: _has_one_of_id(t, "end-date"))
-        if not end_date:
+        rows = table.find_all("tr")
+        if len(rows) < 2:
             return None
-        try:
-            dt = datetime.strptime(end_date.text, "%b %Y")
-        except ValueError:
-            return None
-        return dt
+
+        headers = [th.get_text(strip=True) for th in rows[0].find_all("th")]
+        cells = [td.get_text(strip=True) for td in rows[1].find_all("td")]
+
+        if "Start" in headers and len(headers) == len(cells):
+            start_idx = headers.index("Start")
+            start_text = cells[start_idx]
+            try:
+                return datetime.strptime(start_text, "%d %b %Y")
+            except ValueError:
+                return None
+        return None
 
     def parse(self) -> OUModule:
         soup = self._get_soup()
@@ -120,8 +127,5 @@ class ModulePageParser(DataParser):
             url=self.url,
             credits=self._get_module_credits(soup),
             ou_study_level=self._get_module_study_level(soup),
-            related_qualifications=self._get_related_qualifications(soup),
-            course_work_includes=self._get_course_work_includes(soup),
             next_start=self._get_next_start(soup),
-            next_end=self._get_next_end(soup),
         )
