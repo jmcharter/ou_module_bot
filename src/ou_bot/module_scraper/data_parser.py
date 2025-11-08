@@ -1,64 +1,10 @@
-from dataclasses import dataclass
-from datetime import datetime
-
-from bs4 import BeautifulSoup, Tag
 import requests
 
 from ou_bot.common.ou_module import OUModule
 
 
-@dataclass
-class DataParser:
-    data: str = ""
-
-    def _get_soup(self):
-        return BeautifulSoup(self.data, "html.parser")
-
-    def set_data(self, data: str) -> None:
-        self.data = data
-
-    def parse(self):
-        raise NotImplementedError
-
-
-class CourseListParser(DataParser):
-    def parse(self) -> list[str]:
-        course_url_template = (
-            "https://enrolment.open.ac.uk/page-data/courses/qualifications/details/{module_code}/page-data.json"
-        )
-        soup = self._get_soup()
-        course_list = soup.find(class_="productList")
-
-        if course_list is None:
-            raise ValueError(
-                "Could not find element with class 'productList' on the page. "
-                "The OU website structure may have changed."
-            )
-
-        # Find all ou-link elements with href attributes
-        ou_links = course_list.find_all("ou-link")
-        urls = [tag.get("href") for tag in ou_links if tag.get("href")]
-
-        if not urls:
-            raise ValueError("No module URLs found in the productList. " "The OU website structure may have changed.")
-
-        return urls
-
-
-def _has_one_of_id(t: Tag, search_id: str) -> bool:
-    match t.get("id"):
-        case str(found_id) if found_id.startswith(search_id):
-            return True
-        case _:
-            return False
-
-
 class ModulePageParser:
-    """Parse the module page and return module data
-
-    The current module page (2023-05-27) does not give class names or ids to many of the
-    values, so they need to be found by navigating from related headers.
-    """
+    """Parse the module page JSON data and return module data"""
 
     url: str
 

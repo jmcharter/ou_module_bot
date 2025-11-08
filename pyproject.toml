@@ -6,7 +6,6 @@ authors = [{ name = "Jon Charter" }]
 requires-python = "~=3.12"
 dependencies = [
     "black>=23.3.0,<24",
-    "beautifulsoup4>=4.12.2,<5",
     "pydantic>=1.10.8,<2",
     "requests>=2.31.0,<3",
     "praw>=7.7.0,<8",

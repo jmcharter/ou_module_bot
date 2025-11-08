@@ -1,10 +1,6 @@
 from pydantic import BaseSettings, Field
 
 
-class ScraperConfig(BaseSettings):
-    url: str
-
-
 class CourseListScraperConfig(BaseSettings):
     url: str = Field(..., env="OU_MODULE_URL", description="URL for OU modules")
 

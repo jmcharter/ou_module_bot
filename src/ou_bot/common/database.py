@@ -20,7 +20,7 @@ class db:
                 module_title TEXT,
                 url TEXT,
                 credits INTEGER,
-                ou_study_level INTEGER,
+                ou_study_level TEXT,
                 next_start TEXT,
                 last_updated_utc TEXT
             )

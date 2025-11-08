@@ -7,8 +7,7 @@ from ou_bot.common.database import db
 from ou_bot.common.ou_module import OUModule
 from ou_bot.common.config import DatabaseConfig
 from ou_bot.module_scraper.config import CourseListScraperConfig, ThreadConfig
-from ou_bot.module_scraper.data_parser import CourseListParser, ModulePageParser
-from ou_bot.module_scraper.scraper import Scraper
+from ou_bot.module_scraper.data_parser import ModulePageParser
 
 logger = structlog.stdlib.get_logger(__name__)
 
@@ -59,9 +58,6 @@ def run():
     scraper_config = CourseListScraperConfig()
     thread_config = ThreadConfig()
     database_config = DatabaseConfig()
-
-    scraper = Scraper(config=scraper_config)
-    course_list_parser = CourseListParser()
     database = db(config=database_config)
 
     urls = get_module_urls(scraper_config.url)
