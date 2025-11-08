@@ -1,33 +1,40 @@
-[tool.poetry]
+[project]
 name = "ou-bot"
 version = "1.0.0"
 description = ""
-authors = ["Jon Charter"]
-packages = [{ include = "ou_bot", from = "src" }]
+authors = [{ name = "Jon Charter" }]
+requires-python = "~=3.12"
+dependencies = [
+    "black>=23.3.0,<24",
+    "beautifulsoup4>=4.12.2,<5",
+    "pydantic>=1.10.8,<2",
+    "requests>=2.31.0,<3",
+    "praw>=7.7.0,<8",
+    "mako>=1.2.4,<2",
+    "cachetools>=5.3.1,<6",
+    "structlog>=25.1.0,<26",
+]
 
-[tool.poetry.dependencies]
-python = "^3.12"
-black = "^23.3.0"
-beautifulsoup4 = "^4.12.2"
-pydantic = "^1.10.8"
-requests = "^2.31.0"
-praw = "^7.7.0"
-mako = "^1.2.4"
-cachetools = "^5.3.1"
-structlog = "^25.1.0"
+[project.scripts]
+submission_bot = "ou_bot.reddit_bot.submission_bot:run"
+comment_bot = "ou_bot.reddit_bot.comment_bot:run"
+module_scraper = "ou_bot.module_scraper.app:run"
 
+[dependency-groups]
+dev = ["black>=23.3.0,<24"]
 
-[tool.poetry.group.dev.dependencies]
-black = "^23.3.0"
+[tool.hatch.build.targets.sdist]
+include = ["src/ou_bot"]
+
+[tool.hatch.build.targets.wheel]
+include = ["src/ou_bot"]
+
+[tool.hatch.build.targets.wheel.sources]
+"src/ou_bot" = "ou_bot"
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.black]
 line-length = 120
-
-[tool.poetry.scripts]
-submission_bot = 'ou_bot.reddit_bot.submission_bot:run'
-comment_bot = 'ou_bot.reddit_bot.comment_bot:run'
-module_scraper = 'ou_bot.module_scraper.app:run'
