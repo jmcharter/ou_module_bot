@@ -26,3 +26,6 @@ class AppConfig(BaseSettings):
     subreddit: str = Field(
         ..., env="SUBREDDIT", description="The subreddit the application will scan the posts of and respond to"
     )
+    max_retry_attempts: int = Field(
+        12, env="MAX_RETRY_ATTEMPTS", description="Maximum number of retry attempts for Reddit API calls (12 attempts = ~1 hour total retry time)"
+    )

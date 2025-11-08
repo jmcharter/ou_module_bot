@@ -30,13 +30,35 @@ def handle_comment(comment: Comment, modules: set[str]):
             user=config.praw.username,
         )
         return
-    response = comment.reply(response_body)
-    if not response:
-        bound_logger.error("Post two of two has failed")
-        return
 
-    submission: Submission = comment.submission
-    bound_logger.info(f"Responded to comment: {comment.id}, of submission: {submission.title}", post=response)
+    # Simple retry logic for Reddit API failures
+    max_attempts = config.max_retry_attempts
+    for attempt in range(max_attempts):
+        try:
+            response = comment.reply(response_body)
+            if response:
+                submission: Submission = comment.submission
+                bound_logger.info(f"Responded to comment: {comment.id}, of submission: {submission.title}", post=response)
+                return
+            else:
+                bound_logger.error(f"Reply failed (attempt {attempt + 1}/{max_attempts})")
+        except Exception as e:
+            bound_logger.error(
+                f"Reddit API error (attempt {attempt + 1}/{max_attempts})",
+                error=str(e),
+                error_type=type(e).__name__
+            )
+
+            # Don't retry on certain errors
+            if "RATELIMIT" in str(e) or "USER_REQUIRED" in str(e):
+                break
+
+            # Exponential backoff: doubles each time
+            if attempt < max_attempts - 1:
+                import time
+                time.sleep(2 ** attempt)
+
+    bound_logger.error("All reply attempts failed")
 
 
 def run():

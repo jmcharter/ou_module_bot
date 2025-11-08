@@ -17,6 +17,7 @@ services:
       - MAX_CONCURRENT_WORKERS
       - DATABASE_NAME
       - SUBREDDIT
+      - MAX_RETRY_ATTEMPTS
     volumes:
       - ./data:/app/data
 
@@ -38,6 +39,7 @@ services:
       - MAX_CONCURRENT_WORKERS
       - DATABASE_NAME
       - SUBREDDIT
+      - MAX_RETRY_ATTEMPTS
     restart: no
     volumes:
       - ./data:/app/data
