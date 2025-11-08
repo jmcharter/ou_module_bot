@@ -59,11 +59,5 @@ def scan_comments(sub_name: str, reddit: Reddit, comment_handler: Callable[[mode
     for comment in comment_stream.comments(skip_existing=True):
         modules = get_tma_module_codes()
         called_modules = get_called_modules(comment.body, modules)
-        logger.debug(
-            "Comment",
-            subreddit=subreddit.display_name,
-            comment=comment.body,
-            modules=modules,
-        )
         if called_modules:
             comment_handler(comment, called_modules)
