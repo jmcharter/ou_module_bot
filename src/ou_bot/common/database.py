@@ -21,10 +21,7 @@ class db:
                 url TEXT,
                 credits INTEGER,
                 ou_study_level INTEGER,
-                related_qualifications TEXT,
-                course_work_includes TEXT,
                 next_start TEXT,
-                next_end TEXT,
                 last_updated_utc TEXT
             )
         """
@@ -52,13 +49,10 @@ class db:
                 url,
                 credits,
                 ou_study_level,
-                related_qualifications,
-                course_work_includes,
                 next_start,
-                next_end,
                 last_updated_utc
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
         """
 
         try:
@@ -66,21 +60,13 @@ class db:
         except AttributeError:
             next_start = None
 
-        try:
-            next_end = module.next_end.isoformat() if module.next_end else None
-        except AttributeError:
-            next_end = None
-
         values = (
             module.module_code,
             module.module_title,
             module.url,
             module.credits,
             module.ou_study_level,
-            ", ".join(module.related_qualifications),
-            ", ".join(module.course_work_includes),
             next_start,
-            next_end,
             datetime.now(tz=timezone.utc),
         )
         self.cursor.execute(sql, values)

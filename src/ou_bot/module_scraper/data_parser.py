@@ -79,35 +79,12 @@ class ModulePageParser(DataParser):
         study_level = parent_table.find("td").text.strip()
         return int(study_level)
 
-    def _get_related_qualifications(self, soup: BeautifulSoup) -> list[str]:
-        qual_list = soup.find("div", id="qual-list")
-        if not qual_list:
-            return []
-        return [tag.text.strip() for tag in qual_list if tag.text.strip()]
-
-    def _get_course_work_includes(self, soup: BeautifulSoup) -> list[str]:
-        items = soup.find("h3", string="Course work includes:").parent.parent.find_all("dd")
-        if not items:
-            return []
-        items = items[1:]  # Remove first as it is just the subtitle
-        return [item.text.strip() for item in items]
-
     def _get_next_start(self, soup: BeautifulSoup) -> datetime | None:
         start_date = soup.find(lambda t: _has_one_of_id(t, "start-date"))
         if not start_date:
             return None
         try:
             dt = datetime.strptime(start_date.text, "%d %b %Y")
-        except ValueError:
-            return None
-        return dt
-
-    def _get_next_end(self, soup: BeautifulSoup) -> datetime | None:
-        end_date = soup.find(lambda t: _has_one_of_id(t, "end-date"))
-        if not end_date:
-            return None
-        try:
-            dt = datetime.strptime(end_date.text, "%b %Y")
         except ValueError:
             return None
         return dt
@@ -120,8 +97,5 @@ class ModulePageParser(DataParser):
             url=self.url,
             credits=self._get_module_credits(soup),
             ou_study_level=self._get_module_study_level(soup),
-            related_qualifications=self._get_related_qualifications(soup),
-            course_work_includes=self._get_course_work_includes(soup),
             next_start=self._get_next_start(soup),
-            next_end=self._get_next_end(soup),
         )
