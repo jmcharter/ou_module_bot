@@ -9,7 +9,7 @@ class OUModule(BaseModel):
     module_title: str
     url: str
     credits: int
-    ou_study_level: int
+    ou_study_level: str
     next_start: datetime | None
 
 

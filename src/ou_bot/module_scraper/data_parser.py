@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from bs4 import BeautifulSoup, Tag
+import requests
 
 from ou_bot.common.ou_module import OUModule
 
@@ -22,6 +23,9 @@ class DataParser:
 
 class CourseListParser(DataParser):
     def parse(self) -> list[str]:
+        course_url_template = (
+            "https://enrolment.open.ac.uk/page-data/courses/qualifications/details/{module_code}/page-data.json"
+        )
         soup = self._get_soup()
         course_list = soup.find(class_="productList")
 
@@ -36,10 +40,7 @@ class CourseListParser(DataParser):
         urls = [tag.get("href") for tag in ou_links if tag.get("href")]
 
         if not urls:
-            raise ValueError(
-                "No module URLs found in the productList. "
-                "The OU website structure may have changed."
-            )
+            raise ValueError("No module URLs found in the productList. " "The OU website structure may have changed.")
 
         return urls
 
@@ -52,7 +53,7 @@ def _has_one_of_id(t: Tag, search_id: str) -> bool:
             return False
 
 
-class ModulePageParser(DataParser):
+class ModulePageParser:
     """Parse the module page and return module data
 
     The current module page (2023-05-27) does not give class names or ids to many of the
@@ -61,41 +62,31 @@ class ModulePageParser(DataParser):
 
     url: str
 
-    def _get_module_code(self, soup: BeautifulSoup) -> str:
-        return soup.find("div", class_="product-module-code-identifier").text.strip()
-
-    def _get_module_title(self, soup: BeautifulSoup) -> str:
-        return soup.find("h1", class_="product-award-title-identifier").text.strip()
-
-    def _get_module_credits(self, soup: BeautifulSoup) -> int:
-        # Credits value is currently two nodes after the header.
-        credits_header = soup.find(lambda t: t.name == "h3" and t.text.strip() == "Credits")
-        credits_value = credits_header.next_sibling.next_sibling
-        return int(credits_value.text.strip())
-
-    def _get_module_study_level(self, soup: BeautifulSoup) -> int:
-        study_level_caption = soup.find(lambda t: t.name == "caption" and t.text.strip() == "Level of Study")
-        parent_table = study_level_caption.parent
-        study_level = parent_table.find("td").text.strip()
-        return int(study_level)
-
-    def _get_next_start(self, soup: BeautifulSoup) -> datetime | None:
-        start_date = soup.find(lambda t: _has_one_of_id(t, "start-date"))
-        if not start_date:
-            return None
+    def _get_json(self):
         try:
-            dt = datetime.strptime(start_date.text, "%d %b %Y")
-        except ValueError:
-            return None
-        return dt
+            response = requests.get(self.url, timeout=10)
+            response.raise_for_status()  # Raise an error for bad status codes
+            return response.json()
+        except requests.exceptions.JSONDecodeError as e:
+            raise ValueError(f"Invalid JSON response from {self.url}: {e}")
+        except requests.exceptions.RequestException as e:
+            raise ValueError(f"Failed to fetch {self.url}: {e}")
 
     def parse(self) -> OUModule:
-        soup = self._get_soup()
+        json_data = self._get_json()
+
+        try:
+            module_data = json_data["result"]["pageContext"]["moduleExternalData"]["data"]["allOuModuleType"]["edges"][
+                0
+            ]["node"]["CourseDetails"]
+        except (KeyError, IndexError, TypeError) as e:
+            raise ValueError(f"Could not parse module data from {self.url}: {e}")
+
         return OUModule(
-            module_code=self._get_module_code(soup),
-            module_title=self._get_module_title(soup),
-            url=self.url,
-            credits=self._get_module_credits(soup),
-            ou_study_level=self._get_module_study_level(soup),
-            next_start=self._get_next_start(soup),
+            module_code=module_data["courseCode"],
+            module_title=module_data["courseTitle"],
+            url=module_data["courseURL"],
+            credits=int(module_data["CreditPoints"]),
+            ou_study_level=module_data["OUCourseLevel"],
+            next_start=module_data["NextStartDate"],
         )

@@ -3,12 +3,12 @@ from dataclasses import dataclass
 import requests
 from requests import Response
 
-from ou_bot.module_scraper.config import ScraperConfig
+from ou_bot.module_scraper.config import CourseListScraperConfig, ScraperConfig
 
 
 @dataclass
 class Scraper:
-    config: ScraperConfig
+    config: ScraperConfig | CourseListScraperConfig
 
     def _get_request(self) -> Response:
         url = self.config.url
