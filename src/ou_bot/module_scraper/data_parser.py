@@ -31,7 +31,7 @@ class ModulePageParser:
         return OUModule(
             module_code=module_data["courseCode"],
             module_title=module_data["courseTitle"],
-            url=module_data["courseURL"],
+            url=module_data["courseURL"].lower() if module_data["courseURL"] else "",
             credits=int(module_data["CreditPoints"]),
             ou_study_level=module_data["OUCourseLevel"],
             next_start=module_data["NextStartDate"],
