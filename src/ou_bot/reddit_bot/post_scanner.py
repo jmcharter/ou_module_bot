@@ -54,7 +54,7 @@ def scan_submissions(sub_name: str, reddit: Reddit, submission_handler: Callable
 
 def get_called_modules(comment: str, modules: list[str]) -> ModuleCodeSet:
     comment = comment.upper().replace("\\", "")
-    pattern = r"\[\[\s*(" + "|".join(re.escape(module) for module in modules) + r")\s*\]\]"
+    pattern = r"(?:^|\s)!(" + "|".join(re.escape(module) for module in modules) + r")\b"
     matches = re.findall(pattern, comment)
     return set(matches)
 
