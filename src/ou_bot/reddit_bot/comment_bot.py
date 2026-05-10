@@ -17,7 +17,7 @@ logger = structlog.stdlib.get_logger(__name__)
 def handle_comment(comment: Comment, modules: set[str]):
     bound_logger = logger.bind(comment=comment)
 
-    if comment.author and comment.author.name == config.praw.username:
+    if comment.author and str(comment.author) == config.praw.username:
         return
 
     repo = ModuleRepository()
