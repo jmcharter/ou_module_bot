@@ -3,9 +3,8 @@ import concurrent.futures
 import requests
 import structlog
 
-from ou_bot.common.database import db
+from ou_bot.common.database import ModuleRepository
 from ou_bot.common.ou_module import OUModule
-from ou_bot.common.config import DatabaseConfig
 from ou_bot.module_scraper.config import CourseListScraperConfig, ThreadConfig
 from ou_bot.module_scraper.data_parser import ModulePageParser
 
@@ -34,7 +33,7 @@ def scrape_module_page(url: str):
         return module_page_parser.parse()
     except Exception as e:
         print(f"Error scraping {url}: {e}")
-        return None  # or log the error and continue
+        return None
 
 
 def scrape_module_pages(urls: list[str], config: ThreadConfig):
@@ -42,26 +41,19 @@ def scrape_module_pages(urls: list[str], config: ThreadConfig):
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = [executor.submit(scrape_module_page, url) for url in urls]
         concurrent.futures.wait(futures)
-        results = [future.result() for future in futures]
-        results = [r for r in results if r is not None]  # Filter out failed scrapes
+        results = [r for r in (future.result() for future in futures) if r is not None]
         return results
-
-
-def write_data_to_db(session: db, data: list[OUModule]) -> None:
-    with session as database:
-        for module in data:
-            database.upsert_ou_module(module)
 
 
 def run():
     logger.info("Attempting to scrape OU Modules")
     scraper_config = CourseListScraperConfig()
     thread_config = ThreadConfig()
-    database_config = DatabaseConfig()
-    database = db(config=database_config)
+
+    repo = ModuleRepository()
 
     urls = get_module_urls(scraper_config.url)
     module_data = scrape_module_pages(urls, thread_config)
     if module_data:
         logger.info("Module data scraped.", scraped_module_qty=len(module_data))
-    write_data_to_db(database, module_data)
+    repo.upsert_many(module_data)

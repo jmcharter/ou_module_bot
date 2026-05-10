@@ -20,7 +20,7 @@ comment_bot = "ou_bot.reddit_bot.comment_bot:run"
 module_scraper = "ou_bot.module_scraper.app:run"
 
 [dependency-groups]
-dev = ["black>=23.3.0,<24"]
+dev = ["black>=23.3.0,<24", "pytest>=8,<9"]
 
 [tool.hatch.build.targets.sdist]
 include = ["src/ou_bot"]

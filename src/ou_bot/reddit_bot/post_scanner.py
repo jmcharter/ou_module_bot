@@ -1,13 +1,12 @@
 import re
-from typing import Callable
-from cachetools.func import ttl_cache
+from collections.abc import Callable
 
-from praw import models, Reddit
+from cachetools.func import ttl_cache
+from praw import Reddit, models
 from praw.models.reddit.subreddit import SubredditStream
 import structlog
 
-from ou_bot.common.config import DatabaseConfig
-from ou_bot.common.database import db
+from ou_bot.common.database import ModuleRepository
 
 logger = structlog.stdlib.get_logger(__name__)
 
@@ -19,11 +18,7 @@ MODULES_TTL = 24 * 60 * 60  # 24 Hours
 
 @ttl_cache(ttl=MODULES_TTL)
 def get_tma_module_codes() -> list[str]:
-    database_config = DatabaseConfig()
-    database = db(database_config)
-    with database as session:
-        module_codes = session.get_all_module_codes()
-        return module_codes
+    return ModuleRepository().get_all_codes()
 
 
 def match_found(target: str, module: str) -> bool:
@@ -46,10 +41,9 @@ def scan_submissions(sub_name: str, reddit: Reddit, submission_handler: Callable
 
 
 def get_called_modules(comment: str, modules: list[str]) -> ModuleCodeSet:
-    comment = comment.upper().replace("\\", "")  # New reddit will add backslashes to '[[]]', old reddit does not.
+    comment = comment.upper().replace("\\", "")
     pattern = r"\[\[\s*(" + "|".join(re.escape(module) for module in modules) + r")\s*\]\]"
     matches = re.findall(pattern, comment)
-    # logger.debug("get_called_modules", pattern=pattern, comment=comment, matches=matches)
     return set(matches)
 
 
