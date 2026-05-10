@@ -7,4 +7,4 @@ This post mentioned the following module(s):
 % endfor
 
 ---
-^(I'm a bot — summon me with ! followed by a module code, e.g. !TM112)
+^(I'm a bot. Summon me with ! followed by a module code, e.g. !TM112)
