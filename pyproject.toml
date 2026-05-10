@@ -6,7 +6,8 @@ authors = [{ name = "Jon Charter" }]
 requires-python = "~=3.12"
 dependencies = [
     "black>=23.3.0,<24",
-    "pydantic>=1.10.8,<2",
+    "pydantic>=2.0,<3",
+    "pydantic-settings>=2.0,<3",
     "requests>=2.31.0,<3",
     "praw>=7.7.0,<8",
     "mako>=1.2.4,<2",

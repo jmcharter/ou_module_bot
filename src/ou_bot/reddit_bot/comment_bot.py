@@ -17,7 +17,11 @@ logger = structlog.stdlib.get_logger(__name__)
 def handle_comment(comment: Comment, modules: set[str]):
     bound_logger = logger.bind(comment=comment)
 
-    ou_modules = ModuleRepository().find_by_codes(list(modules))
+    repo = ModuleRepository()
+    if repo.has_replied(comment.id):
+        return
+
+    ou_modules = repo.find_by_codes(list(modules))
 
     response_body = serve_comment_template(modules=ou_modules, user=config.praw.username)
     if not response_body:
@@ -33,23 +37,27 @@ def handle_comment(comment: Comment, modules: set[str]):
         try:
             response = comment.reply(response_body)
             if response:
+                try:
+                    repo.add_reply(comment.id)
+                except Exception as e:
+                    bound_logger.error("Failed to record reply", error=str(e))
                 submission: Submission = comment.submission
-                bound_logger.info(f"Responded to comment: {comment.id}, of submission: {submission.title}", post=response)
+                bound_logger.info(
+                    f"Responded to comment: {comment.id}, of submission: {submission.title}", post=response
+                )
                 return
             else:
                 bound_logger.error(f"Reply failed (attempt {attempt + 1}/{max_attempts})")
         except Exception as e:
             bound_logger.error(
-                f"Reddit API error (attempt {attempt + 1}/{max_attempts})",
-                error=str(e),
-                error_type=type(e).__name__
+                f"Reddit API error (attempt {attempt + 1}/{max_attempts})", error=str(e), error_type=type(e).__name__
             )
 
             if "RATELIMIT" in str(e) or "USER_REQUIRED" in str(e):
                 break
 
             if attempt < max_attempts - 1:
-                time.sleep(2 ** attempt)
+                time.sleep(2**attempt)
 
     bound_logger.error("All reply attempts failed")
 

@@ -1,9 +1,11 @@
 import re
+import time
 from collections.abc import Callable
 
 from cachetools.func import ttl_cache
 from praw import Reddit, models
 from praw.models.reddit.subreddit import SubredditStream
+from prawcore.exceptions import RequestException, ServerError
 import structlog
 
 from ou_bot.common.database import ModuleRepository
@@ -32,12 +34,22 @@ def get_matching_modules_from_string(target: str) -> set[str]:
 
 def scan_submissions(sub_name: str, reddit: Reddit, submission_handler: Callable[[models.Submission, set[str]], None]):
     subreddit = reddit.subreddit(sub_name)
-    for submission in subreddit.stream.submissions(skip_existing=True):
-        title_matches = get_matching_modules_from_string(submission.title)
-        body_matches = get_matching_modules_from_string(submission.selftext)
-        matches = title_matches | body_matches
-        if matches:
-            submission_handler(submission, matches)
+    while True:
+        try:
+            for submission in subreddit.stream.submissions(skip_existing=True):
+                title_matches = get_matching_modules_from_string(submission.title)
+                body_matches = get_matching_modules_from_string(submission.selftext)
+                matches = title_matches | body_matches
+                if matches:
+                    submission_handler(submission, matches)
+        except (ServerError, RequestException) as e:
+            logger.error("Submission stream error, restarting in 60s", error=str(e))
+            time.sleep(60)
+        except Exception as e:
+            logger.error(
+                "Unexpected submission stream error, restarting in 60s", error=str(e), error_type=type(e).__name__
+            )
+            time.sleep(60)
 
 
 def get_called_modules(comment: str, modules: list[str]) -> ModuleCodeSet:
@@ -50,8 +62,18 @@ def get_called_modules(comment: str, modules: list[str]) -> ModuleCodeSet:
 def scan_comments(sub_name: str, reddit: Reddit, comment_handler: Callable[[models.Comment, ModuleCodeSet], None]):
     subreddit = reddit.subreddit(sub_name)
     comment_stream: SubredditStream = subreddit.stream
-    for comment in comment_stream.comments(skip_existing=True):
-        modules = get_tma_module_codes()
-        called_modules = get_called_modules(comment.body, modules)
-        if called_modules:
-            comment_handler(comment, called_modules)
+    while True:
+        try:
+            for comment in comment_stream.comments(skip_existing=True):
+                modules = get_tma_module_codes()
+                called_modules = get_called_modules(comment.body, modules)
+                if called_modules:
+                    comment_handler(comment, called_modules)
+        except (ServerError, RequestException) as e:
+            logger.error("Comment stream error, restarting in 60s", error=str(e))
+            time.sleep(60)
+        except Exception as e:
+            logger.error(
+                "Unexpected comment stream error, restarting in 60s", error=str(e), error_type=type(e).__name__
+            )
+            time.sleep(60)

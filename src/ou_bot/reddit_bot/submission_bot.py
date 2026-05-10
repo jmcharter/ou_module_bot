@@ -17,7 +17,11 @@ logger = structlog.stdlib.get_logger(__name__)
 def handle_submission(submission: Submission, modules: set[str]):
     bound_logger = logger.bind(submission=submission)
 
-    ou_modules = ModuleRepository().find_by_codes(list(modules))
+    repo = ModuleRepository()
+    if repo.has_replied(submission.id):
+        return
+
+    ou_modules = repo.find_by_codes(list(modules))
 
     response_body = serve_modules_template(modules=ou_modules, user=config.praw.username)
     if not response_body:
@@ -33,22 +37,24 @@ def handle_submission(submission: Submission, modules: set[str]):
         try:
             response = submission.reply(response_body)
             if response:
+                try:
+                    repo.add_reply(submission.id)
+                except Exception as e:
+                    bound_logger.error("Failed to record reply", error=str(e))
                 bound_logger.info(f"Responded to {submission.title}", post=response)
                 return
             else:
                 bound_logger.error(f"Reply failed (attempt {attempt + 1}/{max_attempts})")
         except Exception as e:
             bound_logger.error(
-                f"Reddit API error (attempt {attempt + 1}/{max_attempts})",
-                error=str(e),
-                error_type=type(e).__name__
+                f"Reddit API error (attempt {attempt + 1}/{max_attempts})", error=str(e), error_type=type(e).__name__
             )
 
             if "RATELIMIT" in str(e) or "USER_REQUIRED" in str(e):
                 break
 
             if attempt < max_attempts - 1:
-                time.sleep(2 ** attempt)
+                time.sleep(2**attempt)
 
     bound_logger.error("All reply attempts failed")
 

@@ -26,6 +26,14 @@ def _ensure_table(conn: sqlite3.Connection) -> None:
         )
         """
     )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS bot_replies (
+            target_id  TEXT PRIMARY KEY,
+            created_at TEXT NOT NULL
+        )
+        """
+    )
 
 
 class ModuleRepository:
@@ -106,9 +114,21 @@ class ModuleRepository:
 
     def get_all_codes(self) -> list[str]:
         with self._connect() as conn:
-            return [
-                row[0]
-                for row in conn.execute(
-                    "SELECT module_code FROM ou_modules"
-                ).fetchall()
-            ]
+            return [row[0] for row in conn.execute("SELECT module_code FROM ou_modules").fetchall()]
+
+    def has_replied(self, target_id: str) -> bool:
+        with self._connect() as conn:
+            return (
+                conn.execute(
+                    "SELECT 1 FROM bot_replies WHERE target_id = ?",
+                    (target_id,),
+                ).fetchone()
+                is not None
+            )
+
+    def add_reply(self, target_id: str) -> None:
+        with self._connect() as conn:
+            conn.execute(
+                "INSERT OR IGNORE INTO bot_replies (target_id, created_at) VALUES (?, ?)",
+                (target_id, datetime.now(timezone.utc).isoformat()),
+            )
